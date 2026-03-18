@@ -527,7 +527,8 @@
       font-size: 0.92rem;
       line-height: 1.55;
     }
-    .modal-card input[type="text"] {
+    .modal-card input[type="text"],
+    .modal-card input[type="password"] {
       width: 100%;
       padding: 14px 16px;
       border: 2px solid var(--line);
@@ -536,8 +537,10 @@
       font-size: 1rem;
       outline: none;
       transition: border-color 200ms ease;
+      margin-bottom: 12px;
     }
-    .modal-card input[type="text"]:focus {
+    .modal-card input[type="text"]:focus,
+    .modal-card input[type="password"]:focus {
       border-color: var(--accent);
     }
     .modal-card .modal-btn {
@@ -559,9 +562,10 @@
   <div class="modal-overlay" id="usernameModal">
     <div class="modal-card">
       <h2>👋 歡迎參加挑戰！</h2>
-      <p>請輸入你嘅名稱，方便記錄你嘅挑戰進度。</p>
-      <input type="text" id="usernameInput" placeholder="例如：小明" maxlength="20" autocomplete="off">
-      <button type="button" class="modal-btn" id="usernameSubmit">開始挑戰 🚀</button>
+      <p>請輸入名稱及自訂密碼。如名稱未有人用會自動註冊；如為舊用戶請以密碼登入。</p>
+      <input type="text" id="usernameInput" placeholder="用戶名稱 (例如：小明)" maxlength="20" autocomplete="off">
+      <input type="password" id="passwordInput" placeholder="自訂登入密碼" maxlength="20">
+      <button type="button" class="modal-btn" id="usernameSubmit">登入 / 開始挑戰 🚀</button>
       <p class="modal-error" id="usernameError"></p>
     </div>
   </div>
@@ -698,6 +702,7 @@
     // ── Username Modal Logic ──
     const usernameModal = document.getElementById("usernameModal");
     const usernameInput = document.getElementById("usernameInput");
+    const passwordInput = document.getElementById("passwordInput");
     const usernameSubmit = document.getElementById("usernameSubmit");
     const usernameError = document.getElementById("usernameError");
 
@@ -713,32 +718,63 @@
 
     usernameSubmit.addEventListener("click", async () => {
       const name = usernameInput.value.trim();
-      if (!name) {
-        usernameError.textContent = "請輸入你嘅名稱";
+      const pwd = passwordInput.value.trim();
+      if (!name || !pwd) {
+        usernameError.textContent = "請輸入名稱及密碼";
         return;
       }
       usernameError.textContent = "";
       usernameSubmit.disabled = true;
-      usernameSubmit.textContent = "儲存中…";
+      usernameSubmit.textContent = "驗證中…";
       try {
-        // Save to localStorage
+        const docRef = db.collection("users").doc(name);
+        const docSnap = await docRef.get();
+
+        if (docSnap.exists) {
+          // Existing user -> check password
+          const data = docSnap.data();
+          if (data.password !== pwd) {
+            usernameError.textContent = "密碼錯誤 (如為新用戶請改用其他名稱)";
+            usernameSubmit.disabled = false;
+            usernameSubmit.textContent = "登入 / 開始挑戰 🚀";
+            return;
+          }
+          // Correct password -> fetch previous days
+          const daysSnap = await docRef.collection("days").get();
+          const state = { days: {} };
+          daysSnap.forEach(d => {
+            state.days[d.id] = d.data();
+          });
+          saveState(state); // load fetched data into localStorage
+
+        } else {
+          // New user -> create account
+          await docRef.set({ 
+            name: name, 
+            password: pwd, 
+            createdAt: firebase.firestore.FieldValue.serverTimestamp() 
+          }, { merge: true });
+        }
+
+        // Save session locally
         localStorage.setItem(USERNAME_KEY, name);
         currentUsername = name;
-        // Save to Firebase
-        await db.collection("users").doc(name).set({ name: name, createdAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        
         hideModal();
-        // Sync any existing local data to Firebase
+        refresh(); // update UI with potentially new fetched data
         syncAllToFirebase();
       } catch (err) {
-        usernameError.textContent = "儲存失敗，請重試";
+        usernameError.textContent = "網絡錯誤，請重試";
         console.error(err);
-      } finally {
         usernameSubmit.disabled = false;
-        usernameSubmit.textContent = "開始挑戰 🚀";
+        usernameSubmit.textContent = "登入 / 開始挑戰 🚀";
       }
     });
 
     usernameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") passwordInput.focus();
+    });
+    passwordInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") usernameSubmit.click();
     });
 
