@@ -455,6 +455,31 @@
       line-height: 1.55;
     }
 
+    /* ── Top Nav (Logout) ── */
+    .top-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .greeting {
+      font-size: 0.95rem;
+      font-weight: 900;
+      color: var(--accent-deep);
+    }
+    .btn-logout {
+      background: rgba(212, 93, 44, 0.12);
+      color: #d45d2c;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      border-radius: 999px;
+      box-shadow: none;
+    }
+    .btn-logout:active {
+      transform: scale(0.95);
+      background: rgba(212, 93, 44, 0.2);
+    }
+
     @media (min-width: 720px) {
       body {
         padding-top: 28px;
@@ -571,6 +596,11 @@
   </div>
 
   <main class="shell">
+    <div class="top-nav" aria-label="導航">
+      <span class="greeting" id="userGreeting"></span>
+      <button type="button" class="btn-logout" id="logoutBtn">登出帳號</button>
+    </div>
+
     <section class="hero">
       <p class="eyebrow">7 Day Challenge</p>
       <h1>7日心靈第二心跳挑戰卡</h1>
@@ -705,6 +735,8 @@
     const passwordInput = document.getElementById("passwordInput");
     const usernameSubmit = document.getElementById("usernameSubmit");
     const usernameError = document.getElementById("usernameError");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const userGreeting = document.getElementById("userGreeting");
 
     function hideModal() {
       usernameModal.classList.add("hidden");
@@ -714,6 +746,7 @@
     if (currentUsername) {
       // Already registered — hide modal immediately
       usernameModal.style.display = "none";
+      userGreeting.textContent = "👋 " + currentUsername;
     }
 
     usernameSubmit.addEventListener("click", async () => {
@@ -759,6 +792,7 @@
         // Save session locally
         localStorage.setItem(USERNAME_KEY, name);
         currentUsername = name;
+        userGreeting.textContent = "👋 " + name;
         
         hideModal();
         refresh(); // update UI with potentially new fetched data
@@ -769,6 +803,23 @@
         usernameSubmit.disabled = false;
         usernameSubmit.textContent = "登入 / 開始挑戰 🚀";
       }
+    });
+
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem(USERNAME_KEY);
+      localStorage.removeItem(STORAGE_KEY); // clear local days data securely
+      currentUsername = null;
+      userGreeting.textContent = "";
+
+      // refresh screen to empty and show modal
+      refresh();
+      usernameInput.value = "";
+      passwordInput.value = "";
+      usernameModal.style.display = "flex";
+      // Need a tiny delay for flex display before fading in
+      requestAnimationFrame(() => {
+        usernameModal.classList.remove("hidden");
+      });
     });
 
     usernameInput.addEventListener("keydown", (e) => {
@@ -850,6 +901,11 @@
         const checked = Boolean(dayState[input.dataset.key]);
         input.checked = checked;
         input.closest(".trigger").classList.toggle("checked", checked);
+        // Reset properties in case they were disabled previously
+        input.disabled = false;
+        input.closest(".trigger").style.opacity = "1";
+        input.closest(".trigger").style.cursor = "pointer";
+        input.closest(".trigger").style.pointerEvents = "auto";
       });
       todayCount.textContent = String(countChecked(dayState));
     }
@@ -858,7 +914,11 @@
       selectedDayKey = dayKey;
       const state = loadState();
       const dayState = state.days[dayKey] || {};
+
       applyDayState(dayState);
+      clearTodayButton.disabled = false;
+      clearTodayButton.style.opacity = "1";
+      clearTodayButton.style.cursor = "pointer";
       // parse dayKey to show display date
       const parts = dayKey.split("-");
       const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
@@ -951,8 +1011,14 @@
       if (!selectedDayKey) {
         selectedDayKey = todayKey;
       }
+      
       const activeDayState = state.days[selectedDayKey] || {};
       applyDayState(activeDayState);
+      
+      clearTodayButton.disabled = false;
+      clearTodayButton.style.opacity = "1";
+      clearTodayButton.style.cursor = "pointer";
+      
       renderWeek(state, now);
       // update badge
       const parts = selectedDayKey.split("-");

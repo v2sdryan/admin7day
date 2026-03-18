@@ -139,7 +139,7 @@
     .user-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       margin-bottom: 12px;
       padding-bottom: 12px;
       border-bottom: 1px solid var(--line);
@@ -156,6 +156,27 @@
       background: var(--accent-soft);
       padding: 4px 10px;
       border-radius: 999px;
+      display: inline-block;
+    }
+    .btn-delete {
+      appearance: none;
+      border: 1px solid #d45d2c;
+      background: rgba(212, 93, 44, 0.05);
+      color: #d45d2c;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+      display: inline-block;
+      transition: background 0.2s, transform 0.2s;
+      box-shadow: none;
+    }
+    .btn-delete:hover {
+      background: rgba(212, 93, 44, 0.15);
+    }
+    .btn-delete:active {
+      transform: scale(0.95);
     }
 
     .days-list {
@@ -365,8 +386,17 @@
 
           userCard.innerHTML = `
             <div class="user-header">
-              <h3 class="user-name">👤 ${escapeHtml(username)}</h3>
-              <div class="user-stats">總共打剔：<strong>${totalChecks}</strong> 項</div>
+              <div>
+                <h3 class="user-name">👤 ${escapeHtml(username)}</h3>
+                <div style="font-size:0.85rem; color:var(--muted); margin-top:6px;">
+                  登入密碼：<strong style="color:var(--text);">${escapeHtml(userData.password || "未有設定")}</strong>
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <div class="user-stats">總共打剔：<strong>${totalChecks}</strong> 項</div>
+                <br>
+                <button type="button" class="btn-delete" onclick="deleteAccount('${escapeHtml(username)}')">🗑️ 刪除帳戶</button>
+              </div>
             </div>
             <div class="days-list">
               ${daysHtml}
@@ -385,12 +415,39 @@
     }
 
     function escapeHtml(unsafe) {
+      if (!unsafe) return "";
       return unsafe
            .replace(/&/g, "&amp;")
            .replace(/</g, "&lt;")
            .replace(/>/g, "&gt;")
            .replace(/"/g, "&quot;")
            .replace(/'/g, "&#039;");
+    }
+
+    // ── Delete Account Logic ──
+    async function deleteAccount(username) {
+      if (!confirm(`確定要刪除「${username}」嘅所有挑戰紀錄同帳戶？\n\n注意：此操作無法復原！`)) {
+        return;
+      }
+      
+      try {
+        const userRef = db.collection("users").doc(username);
+        const daysSnap = await userRef.collection("days").get();
+        
+        // Use batch to delete subcollection AND user document together
+        const batch = db.batch();
+        daysSnap.forEach(d => {
+          batch.delete(d.ref);
+        });
+        batch.delete(userRef);
+        
+        await batch.commit();
+        alert(`已成功刪除「${username}」`);
+        loadData(); // Refresh dashboard
+      } catch (err) {
+        alert("刪除失敗：" + err.message);
+        console.error(err);
+      }
     }
   </script>
 </body>
