@@ -158,32 +158,46 @@
       border-radius: 999px;
     }
 
-    .days-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      gap: 10px;
+    .days-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
 
-    .day-box {
+    .day-row {
       background: #f8fbf9;
       border: 1px solid rgba(0,0,0,0.05);
       border-radius: 8px;
-      padding: 8px;
-      text-align: center;
+      padding: 12px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
     }
     .day-date {
-      font-size: 0.75rem;
+      font-size: 0.9rem;
       color: var(--muted);
-      margin-bottom: 4px;
       font-weight: bold;
+      white-space: nowrap;
+      padding-top: 2px;
+      min-width: 65px;
+    }
+    .day-details {
+      flex: 1;
     }
     .day-count {
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-weight: bold;
       color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .day-items {
+      font-size: 0.9rem;
+      color: var(--text);
+      line-height: 1.5;
     }
     .day-empty {
-      color: #ccc;
+      color: #999;
+      font-weight: normal;
     }
     
     .loading-spinner {
@@ -304,6 +318,7 @@
           
           let totalChecks = 0;
           let daysHtml = '';
+          const triggerNames = { morning: "朝早起身", commute: "搭車/碎片", stress: "壓力爆煲", night: "臨瞓前" };
 
           // Sort days chronologically
           const days = [];
@@ -315,19 +330,30 @@
             totalChecks += checksCount;
 
             const displayDate = day.date.slice(5).replace('-', '/'); // "2026-03-22" -> "03/22"
+            
+            // Map the boolean flags to their human readable names
+            const items = Object.entries(day.data)
+              .filter(([, isChecked]) => isChecked)
+              .map(([key]) => triggerNames[key] || key)
+              .join("、");
 
             if (checksCount > 0) {
               daysHtml += `
-                <div class="day-box">
+                <div class="day-row">
                   <div class="day-date">${displayDate}</div>
-                  <div class="day-count">${checksCount} 項</div>
+                  <div class="day-details">
+                    <div class="day-count">${checksCount} 項 ✅</div>
+                    <div class="day-items">${items}</div>
+                  </div>
                 </div>
               `;
             } else {
               daysHtml += `
-                <div class="day-box" style="opacity: 0.5;">
+                <div class="day-row" style="opacity: 0.6;">
                   <div class="day-date">${displayDate}</div>
-                  <div class="day-count day-empty">0 項</div>
+                  <div class="day-details">
+                    <div class="day-count day-empty">未剔 ⬜</div>
+                  </div>
                 </div>
               `;
             }
@@ -342,7 +368,7 @@
               <h3 class="user-name">👤 ${escapeHtml(username)}</h3>
               <div class="user-stats">總共打剔：<strong>${totalChecks}</strong> 項</div>
             </div>
-            <div class="days-grid">
+            <div class="days-list">
               ${daysHtml}
             </div>
           `;
