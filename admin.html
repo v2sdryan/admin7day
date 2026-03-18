@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>7日心靈挑戰 - 後台管理</title>
+  <style>
+    :root {
+      --bg-top: #fff4e6;
+      --bg-bottom: #f4fbf5;
+      --card: rgba(255, 255, 255, 0.88);
+      --card-strong: #ffffff;
+      --text: #1d2a2f;
+      --muted: #5c6e74;
+      --line: rgba(29, 42, 47, 0.1);
+      --accent: #1f8f6b;
+      --accent-deep: #0d5f47;
+      --accent-soft: rgba(31, 143, 107, 0.12);
+      --gold: #cf8b2d;
+      --shadow: 0 20px 45px rgba(25, 58, 49, 0.12);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Noto Sans HK", "PingFang HK", "Microsoft JhengHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 207, 139, 0.45), transparent 34%),
+        radial-gradient(circle at right 12% top 20%, rgba(110, 188, 153, 0.22), transparent 30%),
+        linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+      padding: 24px 16px;
+    }
+
+    .container {
+      width: min(100%, 800px);
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .header h1 {
+      margin: 0;
+      color: var(--accent-deep);
+    }
+
+    .card {
+      background: var(--card);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+
+    /* ── Login Section ── */
+    #loginSection {
+      max-width: 400px;
+      margin: 40px auto;
+      text-align: center;
+    }
+    .input-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: var(--muted);
+    }
+    .input-group input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid var(--line);
+      border-radius: var(--radius-md);
+      font: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-group input:focus {
+      border-color: var(--accent);
+    }
+    #loginError {
+      color: #d45d2c;
+      font-size: 0.9rem;
+      margin-top: 10px;
+      min-height: 1.2em;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      background: linear-gradient(180deg, #1e8c69, #12664b);
+      color: #fff;
+      font: inherit;
+      font-weight: bold;
+      padding: 12px 24px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 10px 18px rgba(18, 102, 75, 0.2);
+      transition: transform 0.2s;
+    }
+    button:active { transform: scale(0.97); }
+    button:disabled { opacity: 0.7; cursor: not-allowed; }
+
+    /* ── Dashboard Section ── */
+    #dashboardSection { display: none; }
+    
+    .stats-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .user-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .user-card {
+      background: var(--card-strong);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+    }
+
+    .user-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    .user-name {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--accent-deep);
+      margin: 0;
+    }
+    .user-stats {
+      font-size: 0.85rem;
+      color: var(--muted);
+      background: var(--accent-soft);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 10px;
+    }
+
+    .day-box {
+      background: #f8fbf9;
+      border: 1px solid rgba(0,0,0,0.05);
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+    }
+    .day-date {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+      font-weight: bold;
+    }
+    .day-count {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: var(--accent);
+    }
+    .day-empty {
+      color: #ccc;
+    }
+    
+    .loading-spinner {
+      text-align: center;
+      padding: 40px;
+      color: var(--muted);
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>后台管理系統</h1>
+      <p>7日心靈第二心跳挑戰卡</p>
+    </div>
+
+    <!-- Login -->
+    <div id="loginSection" class="card">
+      <div class="input-group">
+        <label>帳號 (Account)</label>
+        <input type="text" id="accInput" value="admin">
+      </div>
+      <div class="input-group">
+        <label>密碼 (Password)</label>
+        <input type="password" id="pwInput">
+      </div>
+      <button id="loginBtn">登入 Login</button>
+      <div id="loginError"></div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboardSection">
+      <div class="stats-bar card" style="padding: 16px 24px; margin-bottom: 16px;">
+        <div>
+          <strong>總用戶數：</strong> <span id="totalUsersCount">0</span>
+        </div>
+        <button id="refreshBtn">🔄 刷新數據</button>
+      </div>
+      <div id="usersContainer" class="user-grid">
+        <!-- User cards will be injected here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script>
+    // ── Firebase Init ──
+    const firebaseConfig = {
+      apiKey: "AIzaSyAMlXXiyS7euOPOkEIpTyQhkDc9JG5hQDQ",
+      authDomain: "days-13149.firebaseapp.com",
+      projectId: "days-13149",
+      storageBucket: "days-13149.firebasestorage.app",
+      messagingSenderId: "527492978193",
+      appId: "1:527492978193:web:7679ed91f0384a76fec3b0"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // ── Elements ──
+    const loginSection = document.getElementById('loginSection');
+    const dashboardSection = document.getElementById('dashboardSection');
+    const loginBtn = document.getElementById('loginBtn');
+    const loginError = document.getElementById('loginError');
+    const accInput = document.getElementById('accInput');
+    const pwInput = document.getElementById('pwInput');
+    const usersContainer = document.getElementById('usersContainer');
+    const totalUsersCount = document.getElementById('totalUsersCount');
+    const refreshBtn = document.getElementById('refreshBtn');
+
+    // ── Login Logic ──
+    const ADMIN_ACC = 'admin';
+    const ADMIN_PW = '93124946';
+
+    loginBtn.addEventListener('click', () => {
+      if (accInput.value === ADMIN_ACC && pwInput.value === ADMIN_PW) {
+        loginSection.style.display = 'none';
+        dashboardSection.style.display = 'block';
+        loadData();
+      } else {
+        loginError.textContent = '帳號或密碼錯誤';
+      }
+    });
+
+    pwInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') loginBtn.click();
+    });
+
+    refreshBtn.addEventListener('click', loadData);
+
+    // ── Data Fetching ──
+    async function loadData() {
+      usersContainer.innerHTML = '<div class="loading-spinner">載入數據中 Loading data...</div>';
+      refreshBtn.disabled = true;
+
+      try {
+        const usersSnapshot = await db.collection("users").orderBy("createdAt", "desc").get();
+        totalUsersCount.textContent = usersSnapshot.size;
+        
+        usersContainer.innerHTML = '';
+        
+        if (usersSnapshot.empty) {
+          usersContainer.innerHTML = '<div class="card" style="text-align:center;color:#5c6e74;">暫無用戶數據 (No users found)</div>';
+          return;
+        }
+
+        for (const userDoc of usersSnapshot.docs) {
+          const userData = userDoc.data();
+          const username = userDoc.id;
+          
+          // Fetch days subcollection
+          const daysSnapshot = await userDoc.ref.collection("days").get();
+          
+          const userCard = document.createElement('div');
+          userCard.className = 'user-card card';
+          
+          let totalChecks = 0;
+          let daysHtml = '';
+
+          // Sort days chronologically
+          const days = [];
+          daysSnapshot.forEach(d => days.push({ date: d.id, data: d.data() }));
+          days.sort((a, b) => a.date.localeCompare(b.date));
+
+          days.forEach(day => {
+            const checksCount = Object.values(day.data).filter(Boolean).length;
+            totalChecks += checksCount;
+
+            const displayDate = day.date.slice(5).replace('-', '/'); // "2026-03-22" -> "03/22"
+
+            if (checksCount > 0) {
+              daysHtml += `
+                <div class="day-box">
+                  <div class="day-date">${displayDate}</div>
+                  <div class="day-count">${checksCount} 項</div>
+                </div>
+              `;
+            } else {
+              daysHtml += `
+                <div class="day-box" style="opacity: 0.5;">
+                  <div class="day-date">${displayDate}</div>
+                  <div class="day-count day-empty">0 項</div>
+                </div>
+              `;
+            }
+          });
+
+          if (days.length === 0) {
+            daysHtml = '<div style="color:#aaa; font-size:0.85rem; padding: 10px;">尚未有打剔紀錄</div>';
+          }
+
+          userCard.innerHTML = `
+            <div class="user-header">
+              <h3 class="user-name">👤 ${escapeHtml(username)}</h3>
+              <div class="user-stats">總共打剔：<strong>${totalChecks}</strong> 項</div>
+            </div>
+            <div class="days-grid">
+              ${daysHtml}
+            </div>
+          `;
+          
+          usersContainer.appendChild(userCard);
+        }
+
+      } catch (err) {
+        console.error("Error fetching data: ", err);
+        usersContainer.innerHTML = `<div class="card" style="color:red; text-align:center;">載入失敗: ${err.message}</div>`;
+      } finally {
+        refreshBtn.disabled = false;
+      }
+    }
+
+    function escapeHtml(unsafe) {
+      return unsafe
+           .replace(/&/g, "&amp;")
+           .replace(/</g, "&lt;")
+           .replace(/>/g, "&gt;")
+           .replace(/"/g, "&quot;")
+           .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
