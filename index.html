@@ -1007,9 +1007,15 @@
 
       todayLabel.textContent = formatDisplayDate(now);
 
-      // default select today on first load
+      // default select today on first load, but ensure it's within the 7 days
       if (!selectedDayKey) {
-        selectedDayKey = todayKey;
+        let defaultDay = new Date(now);
+        if (now < CHALLENGE_START) {
+          defaultDay = new Date(CHALLENGE_START);
+        } else if (now > CHALLENGE_END) {
+          defaultDay = new Date(CHALLENGE_END);
+        }
+        selectedDayKey = formatStorageDate(defaultDay);
       }
       
       const activeDayState = state.days[selectedDayKey] || {};
